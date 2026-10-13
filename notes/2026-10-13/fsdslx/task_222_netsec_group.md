@@ -35,3 +35,10 @@
 - 做了什么：浏览器复核时发现 Carbon 的 key 图标本身就是「KEY」三个字母的图形，放在按钮上读起来像文字，于是把 People.vue 的「编辑权限」图标由 i-carbon-key 改为 i-carbon-user-admin（已在 safelist 的 18 个部门图标之内）。同时纠正一处验证方法错误：此前用 getByRole(main) 作用域在异步样板数据到达前计数，得到的 0 不能证明权限门生效；改成先等「招新部」标题渲染再计数。
 - 结果：重做后：persona=admin 下部门页 5 个部门（含网络网安组）、新建部门 1 个、每行编辑资料/编辑权限/删除部门各 5 个；persona=captain 下内容同样渲染出 5 个部门，而四个写入口计数全为 0，权限门确认生效。改前状态也重新核实：stage 基线 4 个部门、无网络网安组、无新建部门与编辑资料，每行仅编辑权限。截图在 D:\Trae_work\Geek-Class\.zcode-shots\：before-desktop-1280x720.png、after-desktop-1280x720.png、after-mobile-390x844.png（对话框校验态未能截图，浏览器点击在该页面上偶发不稳定；该状态已用 DOM 断言核对）。
 - 下一步：推分支、开 PR
+
+## 17:08:16 +08:00 · PR · #222 · 开 PR #223（fork 提出，目标 stage）
+
+- 执行者：agent-zcode-geek-main-01（ZCode，deepseek-flash）
+- 做了什么：以九段正文契约写 PR #223：https://github.com/Yangtze-University-Geek-Class/admin/pull/223，目标 stage，来源 FsdsLx:task/222/netsec_group。因为本账号对该仓库只有 pull 权限（gh api 实测 permissions={pull:true,push:false}，账号 FsdsLx 是组织 active 成员但无写权限），直接 push 被 403 拒绝，改走 fork：在 FsdsLx 名下建 fork 后推同名 task 分支，再从 fork 开 PR。PR 来自 fork 意味着合并时 issue-lifecycle 没有写权限（#137），#222 不会自动关闭，需合并者当场手工关并留「关闭」记录。
+- 结果：PR 已创建，正文含九段（目的/关联 Closes #222/变更范围/解决链路/验证命令与结果/验收证据/人工验收步骤/审查结论/风险与回滚），验收证据节列出三张本机截图文件名与改前后实测计数。CI 结果另见 PR 页。
+- 下一步：等 CI 与维护者审查；按审查结论补「审查」记录；合并者需手工关 #222
