@@ -42,3 +42,10 @@
 - 做了什么：以九段正文契约写 PR #223：https://github.com/Yangtze-University-Geek-Class/admin/pull/223，目标 stage，来源 FsdsLx:task/222/netsec_group。因为本账号对该仓库只有 pull 权限（gh api 实测 permissions={pull:true,push:false}，账号 FsdsLx 是组织 active 成员但无写权限），直接 push 被 403 拒绝，改走 fork：在 FsdsLx 名下建 fork 后推同名 task 分支，再从 fork 开 PR。PR 来自 fork 意味着合并时 issue-lifecycle 没有写权限（#137），#222 不会自动关闭，需合并者当场手工关并留「关闭」记录。
 - 结果：PR 已创建，正文含九段（目的/关联 Closes #222/变更范围/解决链路/验证命令与结果/验收证据/人工验收步骤/审查结论/风险与回滚），验收证据节列出三张本机截图文件名与改前后实测计数。CI 结果另见 PR 页。
 - 下一步：等 CI 与维护者审查；按审查结论补「审查」记录；合并者需手工关 #222
+
+## 17:13:06 +08:00 · 返工 · #222 · 补上论坛侧第五处部门副本（CI forum 作业报红）
+
+- 执行者：agent-zcode-geek-main-01（ZCode，deepseek-flash）
+- 做了什么：CI 的 forum 作业（Node 26 / pnpm 11.24.0）在 app/forum/tests/titles.test.ts:180 失败：expect(DEPARTMENTS).toEqual(SERVER_DEPARTMENTS.map(...))，收到 5 项、期望 4 项。根因是本机根 vitest 只包含 tests/**，不含 app/forum/tests/**，我没有跑到论坛工具链，漏了这份手工抄写的服务端默认部门副本（app/forum/tests/titles.test.ts:107 的 SERVER_DEPARTMENTS，图标用不带前缀的 chart-network）。给该副本补上 netsec 一项（chart-network / violet / 两个论坛权限包留空）。
+- 结果：本机无法跑论坛工具链复核：node scripts/forum.mjs check 在 check-forum-adoption.mjs 处报 Undocumented upstream adaptation: .gitignore —— 实测该文件内容与 git 对象逐字一致（忽略换行），仅本地检出为 CRLF（工作区 8 个 CR、对象 0 个），属 Windows 换行差异而非本改动；app/forum/node_modules 未安装，论坛测试需 Node≥26/pnpm 11.24.0 工具链。已核对另一处 titles-server-parity.test.ts:95 用 DEPARTMENTS.length 自比对，两侧补齐后同为 5 项。以 CI 的 forum 作业为准复验。
+- 下一步：推送到 fork，等 CI 复跑
