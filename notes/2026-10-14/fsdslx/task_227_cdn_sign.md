@@ -48,3 +48,10 @@
 - 做了什么：CI 的 branch-guard 有两个失败步骤：①「执行记录（notes/）」报「task/227/cdn_sign 的链路里还没有引用 #227 的『审查』记录」——那是审查门禁，只能等真实审查结论，不是改文件能解决的；②「文档跟着模块改（本 PR 的改动）」报「这次的改动动了模块，文档只改了『更新：』日期或空白：.github/workflows/ ↔ docs/ops/CICD.md」。第二条是我的问题：上一条提交改了 deploy-preview.yml / deploy-production.yml 的 render 步骤密钥清单，却只在 CICD.md 改了日期。**那里的说明确实需要改**——CICD.md 第 74 行写明「两条部署工作流把上表从 OAUTH_CLIENT_ID 起的每一项按同名传给 render」，密钥表每加一项都要补一行。已在密钥表补 CDN_SIGN_KEY 一行（可选，默认关闭）。
 - 结果：按 CI 的同一条命令本地复验：node scripts/check-doc-sync.mjs --base origin/stage --head task/227/cdn_sign → 文档同步通过（6 组）；docs-index --check、note check、check-secrets 通过；三方密钥清单仍一致（各 11 项）。
 - 下一步：推送后复验 CI：文档同步步骤应转绿，执行记录步骤仍会红（等审查结论）
+
+## 19:44:25 +08:00 · 审查 · #227 · 审查结论：有条件通过（审查人 = 本 agent，不是人工验收）
+
+- 执行者：agent-zcode-geek-main-01（ZCode，deepseek-flash）
+- 做了什么：按 .agents/skills/code-review/SKILL.md 的逐项可执行动作审查 task/227/cdn_sign（被审提交 1150821，对 merge-base 471d3db，22 文件 +354/−9），结论以 PR 评论发在 #230（kind=review）。审查人明确是 agent-zcode-geek-main-01，不是人工试用/批准；按 CODE-REVIEW 的边界，人工验收与发布授权仍是所有者的独立动作。
+- 结果：逐项证据：分支不变量 check 通过、PR base=stage 无直推 main、secrets 通过且密钥不进响应、两个 .env 模板的 CDN_SIGN_KEY 均为空且 check:environments 通过、未改镜像/compose/端口、docs-index 与 doc-sync（CI 同命令）通过、boundaries 通过、4 个提交信息合规、无旧模型残留、官方仓库无 task/227 分支、部署工作流无绕过 CI、未改 db.ts/package.json/锁文件、note check --pr --for-review 通过（66 链路）。两条建议（verifyCdnSignature 无生产调用方、CDN 清单里 CORS 与缓存是建议值）。未验证项 5 条（无真实调用方、七牛控制台未执行、未做预发布验收、本机 tooling 测试环境问题、#71 口径变更待所有者确认）。结论：有条件通过。
+- 下一步：推送让 CI 的执行记录检查转绿；独立审查与人工验收由维护者/所有者进行
