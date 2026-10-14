@@ -27,3 +27,10 @@
 - 执行者：agent-zcode-geek-main-01（ZCode，deepseek-flash）
 - 做了什么：feat(server): 登录身份改为内部 OpenID，第三方账号只作为凭据（地基阶段）；改动 11 个文件，含三张新表、影子列、身份存储、登录接线与 sid 轮换、回填、回滚脚本、单测与文档。
 - 结果：提交前门禁：tests/server 280/280、tsc、docs-index、boundaries、doc-sync、notes、secrets、typecheck 全过；文档索引已重新生成（docs/architecture/IDENTITY.md 进索引）。
+
+## 18:40:11 +08:00 · PR · #226 · 开 PR #229（fork 提出，目标 stage）
+
+- 执行者：agent-zcode-geek-main-01（ZCode，deepseek-flash）
+- 做了什么：以九段正文契约写 PR #229：https://github.com/Yangtze-University-Geek-Class/admin/pull/229，目标 stage，来源 FsdsLx:task/226/openid_identity。验收证据段写「无界面变化」（本次只改服务端与文档）。同时在 #226 上记录了需求方的两条决定（准入不变、第二渠道选微信及其只能走绑定路径的硬约束），并开了 P1 issue #228（绑定/解绑/合并 + step-up）。
+- 结果：PR 已创建，分支已推到 fork（本账号对该仓库只有读权限，只能走 fork）。
+- 下一步：等 CI 与维护者审查；微信渠道排在 #228 之后
