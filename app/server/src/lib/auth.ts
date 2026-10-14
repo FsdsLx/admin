@@ -12,6 +12,10 @@ export type Session = {
   avatar_url: string | null;
   accessToken: string;
   expires_at: number;
+  /** 内部 OpenID（#226）。地基阶段的影子字段：与上面的渠道字段一起双写，但读路径仍以 login/user_id/accessToken 为准。 */
+  openid: string | null;
+  /** 这个会话是用哪个渠道登录的（目前只有 github）。 */
+  provider: string | null;
 };
 
 /** 清理循环只记日志：一次清理失败不影响服务，也不抛出（#128）。 */
@@ -33,13 +37,14 @@ function createSession(
   login: string,
   userId: number | null,
   avatarUrl: string | null,
-  accessToken: string
+  accessToken: string,
+  identity: { openid: string; provider: string } | null = null
 ): string {
   const id = randomBytes(24).toString("base64url");
   const now = clock();
   db.prepare(
-    "INSERT INTO sessions(id, login, user_id, avatar_url, access_token_encrypted, created_at, expires_at) VALUES(?, ?, ?, ?, ?, ?, ?)"
-  ).run(id, login, userId, avatarUrl, encrypt(accessToken), now, now + SESSION_TTL_MS);
+    "INSERT INTO sessions(id, login, user_id, avatar_url, access_token_encrypted, created_at, expires_at, openid, provider) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).run(id, login, userId, avatarUrl, encrypt(accessToken), now, now + SESSION_TTL_MS, identity?.openid ?? null, identity?.provider ?? null);
   return id;
 }
 
@@ -58,6 +63,8 @@ function getSession(id: string): Session | null {
       avatar_url: row.avatar_url,
       accessToken: decrypt(row.access_token_encrypted),
       expires_at: row.expires_at,
+      openid: row.openid ?? null,
+      provider: row.provider ?? null,
     };
   } catch {
     return null;

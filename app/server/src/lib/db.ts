@@ -351,6 +351,58 @@ CREATE INDEX IF NOT EXISTS idx_application_limits_subject ON application_limits(
 CREATE INDEX IF NOT EXISTS idx_application_limits_at ON application_limits(created_at);
 `);
 
+// 内部身份（#226）：第三方渠道 id 只是凭据，`users.id`（内部 OpenID）才是身份，1 个用户可以挂 N 条 identities。
+// 只新增表，不改已有表结构；建表全部 IF NOT EXISTS，重复启动安全。写入与回填见 lib/identity-store.ts，
+// 身份模型与流程见 docs/architecture/IDENTITY.md。
+db.exec(`
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','disabled','merged')),
+  canonical_email TEXT,
+  merged_into TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS identities (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  provider_uid TEXT NOT NULL,
+  provider_union_id TEXT,
+  email TEXT,
+  email_verified INTEGER NOT NULL DEFAULT 0,
+  raw TEXT,
+  created_at INTEGER NOT NULL,
+  last_login_at INTEGER
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_identities_provider_uid ON identities(provider, provider_uid);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_identities_provider_union ON identities(provider, provider_union_id) WHERE provider_union_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_identities_user ON identities(user_id);
+
+CREATE TABLE IF NOT EXISTS identity_audit (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  action TEXT NOT NULL CHECK (action IN ('link','unlink','login','merge')),
+  user_id TEXT NOT NULL,
+  provider TEXT,
+  provider_uid TEXT,
+  ip TEXT,
+  ua TEXT,
+  ts INTEGER NOT NULL,
+  result TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_identity_audit_user ON identity_audit(user_id, ts);
+`);
+
+// sessions 的内部身份影子列：只加可空列、不改已有列语义（旧列继续是唯一读写来源）。
+// SQLite 的 ADD COLUMN 不幂等（列已存在会报错），所以先看 PRAGMA 再决定加不加；回滚时不删列（SQLite 不支持
+// DROP COLUMN 的旧版本上会失败），只把值清空，见 app/server/scripts/rollback-identity.mjs。
+{
+  const columns = new Set((db.pragma("table_info(sessions)") as { name: string }[]).map(column => column.name));
+  if (!columns.has("openid")) db.exec("ALTER TABLE sessions ADD COLUMN openid TEXT");
+  if (!columns.has("provider")) db.exec("ALTER TABLE sessions ADD COLUMN provider TEXT");
+}
+
 // 旧的「评估中」改回「已收到」（#148）。每次启动都跑一遍，没有这样的行时什么也不改；
 // application_reviews 里的 reviewing 是历史，不动。
 db.prepare("UPDATE applications SET status = 'received' WHERE status = 'reviewing'").run();

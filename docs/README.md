@@ -68,6 +68,7 @@ Agent 进入仓库的第一件事是**确认当前分支**（`git branch --show-
 | 官方标准、采用范围与核对日期 | [REFERENCES](conventions/REFERENCES.md) |
 | 服务合同与源码地图 | [server](services/server/README.md)、[web](services/web/README.md)、[console](services/console/README.md)、[forum](services/forum/README.md) |
 | 系统架构、认证、存储 | [ARCHITECTURE](architecture/ARCHITECTURE.md) |
+| 内部身份、渠道凭据与绑定/合并 | [IDENTITY](architecture/IDENTITY.md) |
 | 安全边界与防护限制 | [SECURITY](architecture/SECURITY.md) |
 | API 契约及错误、幂等约定 | [API](architecture/API.md) |
 | UI 设计、无障碍与组件实现 | [DESIGN](design/DESIGN.md) |

@@ -105,7 +105,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_org_created ON audit_logs(org, created_at D
 `;
 
 const LEGACY_TABLES = ['app_state', 'audit_logs', 'feedback', 'invitations', 'invite_links', 'sessions', 'sqlite_sequence'];
-const CONSOLE_TABLES = ['applications', 'application_reviews', 'console_seeds', 'departments', 'invite_attempts', 'role_assignments', 'titles'];
+/** 内部身份（#226）新增的三张表：同样只新增、不改旧表。 */
+const CONSOLE_TABLES = ['applications', 'application_reviews', 'console_seeds', 'departments', 'identity_audit', 'identities', 'invite_attempts', 'role_assignments', 'titles', 'users'];
 /** 论坛（#57）新增的表：同样只新增、不改旧表。 */
 const FORUM_TABLES = [
   'forum_avatars', 'forum_bookmarks', 'forum_counters', 'forum_follows', 'forum_likes', 'forum_notifications',
@@ -210,12 +211,19 @@ describe('booting on the existing production data.db (legacy schema, no applicat
     const app = await boot(path);
     const { db } = app.services.storage;
 
-    // 新表全部建好；旧表一行不少、一列不变。
+    // 新表全部建好；旧表一行不少、旧列一个值不变。
+    // sessions 是唯一的例外：内部身份地基（#226）给它加了两个可空影子列，旧列本身没动，所以按旧列比对。
     const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all() as { name: string }[]).map(row => row.name);
     expect(tables).toEqual([...new Set([...LEGACY_TABLES, ...CONSOLE_TABLES, ...FORUM_TABLES, ...MAIL_TABLES, ...APPLY_TABLES])].sort());
+    const LEGACY_SESSION_COLUMNS = 'id, login, user_id, avatar_url, access_token_encrypted, created_at, expires_at';
     for (const [table, rows] of Object.entries(before.rows)) {
-      expect(db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all(), table).toEqual(rows);
+      const select = table === 'sessions' ? `SELECT ${LEGACY_SESSION_COLUMNS} FROM sessions ORDER BY rowid` : `SELECT * FROM ${table} ORDER BY rowid`;
+      expect(db.prepare(select).all(), table).toEqual(rows);
     }
+    // 影子列只新增、不改旧语义：回填后这些老会话都指向 github 的内部身份，且与 identities 对得上。
+    const shadow = db.prepare("SELECT user_id, openid, provider FROM sessions ORDER BY rowid").all() as { user_id: number; openid: string | null; provider: string | null }[];
+    expect(shadow.every(row => row.provider === 'github' && row.openid !== null)).toBe(true);
+    for (const row of shadow) expect(app.services.identity.findIdentity('github', String(row.user_id))?.user_id).toBe(row.openid);
     const indexes = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[]).map(row => row.name);
     expect(indexes).toEqual(expect.arrayContaining(['idx_applications_status_created', 'idx_application_reviews_app', 'uq_role_assignments_captain', 'idx_role_assignments_login', 'idx_audit_signin_actor']));
     // 登录过的人的查询（auth.signedInLogins）只读部分索引，不扫整张审计表。
@@ -346,7 +354,8 @@ describe('booting on the existing production data.db (legacy schema, no applicat
     const second = await boot(path);
     const ids = second.services.roles.listDepartments().map(item => item.id).sort();
     expect(ids).toEqual(['community', 'design', 'recruitment', 'tech']);
-    expect(second.services.storage.db.prepare("SELECT name FROM console_seeds").all()).toEqual([{ name: 'departments' }]);
+    // 部门种子与身份回填各写一条标记（#226）：两者都是「只做一次」的播种，重启不再写。
+    expect(second.services.storage.db.prepare("SELECT name FROM console_seeds ORDER BY name").all()).toEqual([{ name: 'departments' }, { name: 'identity_openid' }]);
   });
 
   it('keeps cancelled applications and their complete review history across restarts', async () => {

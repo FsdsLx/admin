@@ -27,6 +27,7 @@ export default async function authRoutes(app: FastifyInstance) {
   revokeGrant, } = app.services.auth;
   const { audit } = app.services.storage;
   const { config, github } = app.services;
+  const identities = app.services.identity;
 
   async function signInWithGitHub(code: string) {
     const token = await exchangeCode(code);
@@ -68,7 +69,17 @@ export default async function authRoutes(app: FastifyInstance) {
         });
         return reply.redirect(withSigninOutcome(back, membership === "pending" ? "invite_pending" : "not_member"));
       }
-      const sid = createSession(user.login, user.id, user.avatar_url, token);
+      // 内部身份（#226）：第三方凭据（GitHub 数字 id）先落成内部 OpenID，再把它双写进会话的影子列。
+      // `/user` 的 email 只是公开邮箱、无法证明已验证，所以按未验证处理（不写 canonical_email）。
+      const identity = identities.resolveGithubIdentity({ login: user.login, userId: user.id, email: user.email, emailVerified: false });
+      identities.audit({
+        action: "login", userId: identity.openid, provider: "github", providerUid: String(user.id),
+        ip: req.ip, ua: req.headers["user-agent"] ?? null, result: identity.created ? "created" : "ok",
+      });
+      // 登录成功后轮换 session id：浏览器上原有的那个会话立即作废，避免会话固定（#226）。
+      const previousSid = req.cookies?.sid;
+      if (previousSid) destroySession(previousSid);
+      const sid = createSession(user.login, user.id, user.avatar_url, token, { openid: identity.openid, provider: "github" });
       audit(null, user.login, "auth.signin", user.login, undefined, req.ip);
       reply.setCookie("sid", sid, {
         httpOnly: true, secure: config.cookieSecure, sameSite: "lax", path: "/", maxAge: 7 * 24 * 60 * 60,

@@ -91,6 +91,7 @@
 |---|---|---|
 | [`API.md`](./architecture/API.md) | 模块自有 Schema、明确错误语义和外部副作用约定。 | — |
 | [`ARCHITECTURE.md`](./architecture/ARCHITECTURE.md) | 三个服务（web/server/forum）组成的严格 monorepo；两套 Docker 栈交付两个环境；明确当前实现与目标的差异。 | [EN](./architecture/ARCHITECTURE.en.md) |
+| [`IDENTITY.md`](./architecture/IDENTITY.md) | 第三方渠道 id 只是**凭据**，`users.id`（内部 OpenID）才是**身份**；1 个用户可绑定 N 个渠道。本文是身份层的唯一说明，落地见 issue #226。 | — |
 | [`SECURITY.md`](./architecture/SECURITY.md) | 区分保留核心服务的真实安全边界与原仓论坛的浏览器演示；新论坛尚不具备生产安全条件。 | [EN](./architecture/SECURITY.en.md) |
 
 ## plan/
@@ -169,4 +170,4 @@
 
 ---
 
-共 58 篇文档（另有 20 篇英文版）。索引按目录分组，组内按文件名排序。
+共 59 篇文档（另有 20 篇英文版）。索引按目录分组，组内按文件名排序。

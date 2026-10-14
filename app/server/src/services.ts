@@ -4,6 +4,7 @@ import type { AppConfig } from "./config.js";
 import { createDatabase } from "./lib/db.js";
 import { createCrypto } from "./lib/crypto.js";
 import { createAuth } from "./lib/auth.js";
+import { createIdentityStore } from "./lib/identity-store.js";
 import { createGithub } from "./lib/github.js";
 import { createCache } from "./lib/cache.js";
 import { createRoleStore } from "./lib/role-store.js";
@@ -27,10 +28,20 @@ export function createServices(config: AppConfig, overrides: ServiceOverrides = 
   const roles = createRoleStore(storage.db);
   const auth = createAuth(storage.db, crypto, config, overrides.httpRequest, overrides.clock);
   const feedback = createFeedbackStore(storage.db);
+  // 内部身份（#226）：users/identities/identity_audit 的读写与回填只在 lib/identity-store.ts。时钟可注入，测试不依赖真实时间。
+  const identity = createIdentityStore(storage.db, { now: overrides.clock });
   // 历史数据一次性归一（#129）：把 org 只是大小写不同的旧行改成 CONSOLE_ORG 的写法，重复启动安全。
   // 改不动就让启动失败，失败前先关掉刚打开的库，与下面论坛、发信的处理一致。
   try {
     feedback.normalizeOrgSpelling(config.consoleOrg);
+  } catch (error) {
+    storage.db.close();
+    throw error;
+  }
+  // 内部身份存量回填（#226）：给老库里已有的 GitHub 会话补 users + identities，并补会话的影子列；
+  // 用 console_seeds 标记保证只做一次，重复启动不改任何东西。回填不动接口行为，做不动就让启动失败。
+  try {
+    identity.backfillSessions();
   } catch (error) {
     storage.db.close();
     throw error;
@@ -61,6 +72,7 @@ export function createServices(config: AppConfig, overrides: ServiceOverrides = 
   return {
     config, storage, crypto,
     auth,
+    identity,
     github, cache, roles,
     access: createAccess({ consoleOrg: config.consoleOrg, getOrgRole: github.getOrgRole, cached: cache.cached, roles }),
     feedback,
