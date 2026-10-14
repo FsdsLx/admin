@@ -84,6 +84,16 @@ export function createConfig(env: Record<string, string | undefined>) {
       allowlist: [...new Set(value("MAIL_ALLOWLIST").split(",").map(item => item.trim().toLowerCase()).filter(Boolean))],
     };
   })();
+  // CDN 时间戳防盗链的签名（#227）：默认关闭。关闭时不要求密钥、服务照常启动；打开时必须给密钥，
+  // TTL 落在 5–10 分钟（要与七牛控制台设的有效期一致）。密钥只在服务端用，绝不下发前端。
+  const cdnSign = (() => {
+    const enabled = ["1", "true", "yes", "on", "enabled"].includes((env.CDN_SIGN_ENABLED ?? "").trim().toLowerCase());
+    const key = (env.CDN_SIGN_KEY ?? "").trim();
+    if (enabled && key.length < 16) throw new Error("CDN_SIGN_KEY must be at least 16 characters when CDN_SIGN_ENABLED is on");
+    const ttlSeconds = Number(env.CDN_SIGN_TTL_SECONDS ?? 300);
+    if (!Number.isInteger(ttlSeconds) || ttlSeconds < 300 || ttlSeconds > 600) throw new Error("CDN_SIGN_TTL_SECONDS must be an integer from 300 to 600");
+    return { enabled, key, ttlSeconds };
+  })();
   return {
     production, port, publicOrigin, host: listenHost, trustProxy, consoleOrg,
     cookieDomain: env.COOKIE_DOMAIN || undefined,
@@ -98,6 +108,7 @@ export function createConfig(env: Record<string, string | undefined>) {
     turnstile: { siteKey: env.TURNSTILE_SITE_KEY ?? "", secretKey: env.TURNSTILE_SECRET_KEY ?? "" },
     powDifficulty,
     mail,
+    cdnSign,
   };
 }
 export type AppConfig = ReturnType<typeof createConfig>;

@@ -35,6 +35,8 @@ export const SECRET_FIELDS = Object.freeze([
   'MAIL_ALIYUN_ACCESS_KEY_SECRET',
   'MAIL_RESEND_API_KEY',
   'MAIL_ALLOWLIST',
+  // CDN 时间戳防盗链的密钥（#227）：与上面的可选密钥同类——不启用签名时可以留空
+  'CDN_SIGN_KEY',
 ]);
 /**
  * Cloudflare Turnstile 是可选的一对：两项都为空 = 明确关闭（服务端 middleware/turnstile.ts 此时只靠工作量证明与限流），
@@ -47,7 +49,7 @@ export const MAIL_ALIYUN_SECRET_PAIR = Object.freeze(['MAIL_ALIYUN_ACCESS_KEY_ID
  * 可选的单项密钥：MAIL_RESEND_API_KEY 空 = 不走 Resend；MAIL_ALLOWLIST 是 MAIL_RECIPIENTS=allowlist 时的收件名单（逗号隔开的邮箱，个人信息，所以当密钥存）。
  * 阿里云与 Resend 都没配时发信关闭，server 把每封信记为「发信没有配置」，一封也不发。
  */
-export const OPTIONAL_SECRETS = Object.freeze(['MAIL_RESEND_API_KEY', 'MAIL_ALLOWLIST']);
+export const OPTIONAL_SECRETS = Object.freeze(['MAIL_RESEND_API_KEY', 'MAIL_ALLOWLIST', 'CDN_SIGN_KEY']);
 /** 渲染时必填的密钥：上面三类可选项之外的全部。 */
 export const REQUIRED_SECRET_FIELDS = Object.freeze(
   SECRET_FIELDS.filter(field => ![...OPTIONAL_SECRET_PAIR, ...MAIL_ALIYUN_SECRET_PAIR, ...OPTIONAL_SECRETS].includes(field)),
@@ -85,6 +87,9 @@ const REQUIRED_FIELDS = Object.freeze([
   'MAIL_ASSET_BASE',
   'MAIL_REPLY_TO',
   'MAIL_RECIPIENTS',
+  // CDN 签名开关与有效期（#227）：非密钥，可见事实；有效期必须与七牛控制台的设置一致
+  'CDN_SIGN_ENABLED',
+  'CDN_SIGN_TTL_SECONDS',
   ...SECRET_FIELDS,
 ]);
 /** 发布身份是构建期 build args：绝不写进部署 env 文件。 */

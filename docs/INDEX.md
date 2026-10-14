@@ -109,6 +109,7 @@
 
 | 文档 | 说明 | EN |
 |---|---|---|
+| [`CDN-ANTI-LEECH.md`](./ops/CDN-ANTI-LEECH.md) | 本文件是**配置清单与操作说明**（由维护者在七牛控制台执行），不是已执行的记录；代码侧见 `app/server/src/routes/portal/cdn.ts` 与 `lib/cdn-sign.ts`（#227）。 | — |
 | [`CICD.md`](./ops/CICD.md) | 六工作流（ci / deploy-preview / deploy-production / branch-hygiene / issue-lifecycle / cert-watch）+ `.env` 驱动；发版只由发布 tag 触发（`vX.Y.Z-rc.N` → 预发布，`vX.Y.Z` → 正式），push 分支只跑 CI；部署开关默认关闭，机器检查不替代人工验收。 | — |
 | [`DEPLOY.md`](./ops/DEPLOY.md) | 同机两套 Docker 栈 + 宿主 nginx TLS 终止；生产发布为独立授权操作，模板存在不等于已经部署。 | [EN](./ops/DEPLOY.en.md) |
 | [`ENVIRONMENT.md`](./ops/ENVIRONMENT.md) | 仅包含占位符；已有环境文件不由代码规范化任务读取或覆盖。 | — |
@@ -169,4 +170,4 @@
 
 ---
 
-共 58 篇文档（另有 20 篇英文版）。索引按目录分组，组内按文件名排序。
+共 59 篇文档（另有 20 篇英文版）。索引按目录分组，组内按文件名排序。

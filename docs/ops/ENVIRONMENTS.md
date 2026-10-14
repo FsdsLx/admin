@@ -2,7 +2,7 @@
 
 > 两份入库 `.env` 的字段契约与可见性规则；地址端口直接写，密钥留空由 CI/CD 注入。
 
-状态：`current` · 更新：2026-10-02 · 机器配置：[deploy/environments.json](../../deploy/environments.json)
+状态：`current` · 更新：2026-10-14 · 机器配置：[deploy/environments.json](../../deploy/environments.json)
 
 ## 可见性规则
 
@@ -56,6 +56,8 @@
 | `TURNSTILE_SECRET_KEY` | **密钥·必须留空** | CI/CD 注入 | CI/CD 注入 |
 | `MAIL_ALIYUN_ACCESS_KEY_ID` / `MAIL_ALIYUN_ACCESS_KEY_SECRET` | 密钥·留空，可选的一对 | CI/CD 注入，可以不配 | 同左 |
 | `MAIL_RESEND_API_KEY` | 密钥·留空，可选 | CI/CD 注入，可以不配 | 同左 |
+| `CDN_SIGN_ENABLED` / `CDN_SIGN_TTL_SECONDS` | 可见 | `disabled` / `300`：不启用 CDN 时间戳签名（当前态，服务照常启动、`/api/cdn/sign` 回 503）。改成 `enabled` 时必须配下面的 `CDN_SIGN_KEY`，并在七牛控制台开启时间戳防盗链，有效期与 `CDN_SIGN_TTL_SECONDS` 一致（只能 300–600 秒，#227） | 同左 |
+| `CDN_SIGN_KEY` | 密钥·留空，可选 | 不启用签名时留空；`CDN_SIGN_ENABLED=enabled` 时必须配（≥16 字符） | 同左 |
 | `MAIL_ALLOWLIST` | 密钥·留空，可选 | `MAIL_RECIPIENTS=allowlist` 时才用 | 同左，现在不用 |
 
 **一个环境只有一个域名**（项目所有者 2026-09-23 决定）：官网、管理端、论坛共用 `PUBLIC_ORIGIN`，按 URL 路径区分——`/admin`、`/admin/…`、`/console`、`/console/…`、`/signin` 进管理端 SPA，`/forum/…` 进论坛，其余进官网。旧的按站点分域名字段 `SITE_ORIGIN`、`ADMIN_HOST`、`PORTAL_HOST`、`FORUM_HOST` 已退役，校验器把模板里任何契约外的字段判为失败，防止重新长出第二份域名配置。
