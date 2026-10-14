@@ -41,3 +41,10 @@
 - 做了什么：CI 的 core 作业在 tests/tooling/deploy-manual.test.ts「knows the same secrets as the env contract, and both workflows pass each one to render」失败：加 CDN_SIGN_KEY 进 SECRET_FIELDS 后，另两处密钥清单没跟着加。那个测试核对三方一致——环境契约的 SECRET_FIELDS、scripts/deploy-manual.mjs 的 SECRET_ENV、两条部署工作流「渲染运行时 env 文件」步骤里的 env。本机该测试文件因既有 Windows 环境问题整文件失败，这条断言在本地从未跑到，所以是我漏的第三到五处。已补：SECRET_ENV 加 CDN_SIGN_KEY、两条工作流各加一行 CDN_SIGN_KEY: ${{ secrets.CDN_SIGN_KEY }}、deploy-manual.mjs 的用法注释同步。
 - 结果：按测试同一逻辑写脚本核对（本机跑不了那个测试文件）：SECRET_ENV === SECRET_FIELDS = true；preview / production 的 render 步骤密钥清单 === SECRET_FIELDS = true（各 11 项）。CDN_SIGN_KEY 在契约里属可选密钥，未在 GitHub 配该 secret 时渲染得到空值、不影响部署。
 - 下一步：推送复验 CI core
+
+## 19:35:26 +08:00 · 返工 · #227 · 补 CICD.md 的密钥表（branch-guard 的文档同步步骤）
+
+- 执行者：agent-zcode-geek-main-01（ZCode，deepseek-flash）
+- 做了什么：CI 的 branch-guard 有两个失败步骤：①「执行记录（notes/）」报「task/227/cdn_sign 的链路里还没有引用 #227 的『审查』记录」——那是审查门禁，只能等真实审查结论，不是改文件能解决的；②「文档跟着模块改（本 PR 的改动）」报「这次的改动动了模块，文档只改了『更新：』日期或空白：.github/workflows/ ↔ docs/ops/CICD.md」。第二条是我的问题：上一条提交改了 deploy-preview.yml / deploy-production.yml 的 render 步骤密钥清单，却只在 CICD.md 改了日期。**那里的说明确实需要改**——CICD.md 第 74 行写明「两条部署工作流把上表从 OAUTH_CLIENT_ID 起的每一项按同名传给 render」，密钥表每加一项都要补一行。已在密钥表补 CDN_SIGN_KEY 一行（可选，默认关闭）。
+- 结果：按 CI 的同一条命令本地复验：node scripts/check-doc-sync.mjs --base origin/stage --head task/227/cdn_sign → 文档同步通过（6 组）；docs-index --check、note check、check-secrets 通过；三方密钥清单仍一致（各 11 项）。
+- 下一步：推送后复验 CI：文档同步步骤应转绿，执行记录步骤仍会红（等审查结论）

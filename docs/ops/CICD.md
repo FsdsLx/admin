@@ -70,6 +70,7 @@
 | `MAIL_ALIYUN_ACCESS_KEY_SECRET` | 阿里云邮件推送的 AccessKey Secret |
 | `MAIL_RESEND_API_KEY` | Resend 的 API Key（可选） |
 | `MAIL_ALLOWLIST` | 收件名单，英文逗号隔开的邮箱（可选；只在 `MAIL_RECIPIENTS=allowlist` 时起作用，两个环境现在都是 `all`） |
+| `CDN_SIGN_KEY` | CDN 时间戳签名的密钥（可选；`CDN_SIGN_ENABLED=enabled` 时才需要，默认关闭，见 [CDN-ANTI-LEECH](CDN-ANTI-LEECH.md)） |
 
 两条部署工作流的「渲染运行时 env 文件」步骤把上表从 `OAUTH_CLIENT_ID` 起的每一项按同名传给 `scripts/deployment-environment.mjs render`，`scripts/deploy-manual.mjs` 的 `SECRET_ENV` 也是同一份名单；`tests/tooling/deploy-manual.test.ts` 核对这三处与 `SECRET_FIELDS` 一致。发信四项都没配时照常部署，server 不发信，见 [ENVIRONMENTS](ENVIRONMENTS.md)。
 
