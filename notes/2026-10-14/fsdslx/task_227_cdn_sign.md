@@ -34,3 +34,10 @@
 - 做了什么：九段正文契约：https://github.com/Yangtze-University-Geek-Class/admin/pull/230。验收证据段写「无界面变化」（只改服务端/env 契约/文档）；审查结论为作者自查 + 有条件通过（条件：独立审查、所有者确认 #71 口径变更、先确定哪些资源要保护）。
 - 结果：PR 已创建，分支已推到 fork。
 - 下一步：等 CI 与维护者审查
+
+## 19:27:59 +08:00 · 返工 · #227 · 补密钥清单的第四、五处（CI core 报红）
+
+- 执行者：agent-zcode-geek-main-01（ZCode，deepseek-flash）
+- 做了什么：CI 的 core 作业在 tests/tooling/deploy-manual.test.ts「knows the same secrets as the env contract, and both workflows pass each one to render」失败：加 CDN_SIGN_KEY 进 SECRET_FIELDS 后，另两处密钥清单没跟着加。那个测试核对三方一致——环境契约的 SECRET_FIELDS、scripts/deploy-manual.mjs 的 SECRET_ENV、两条部署工作流「渲染运行时 env 文件」步骤里的 env。本机该测试文件因既有 Windows 环境问题整文件失败，这条断言在本地从未跑到，所以是我漏的第三到五处。已补：SECRET_ENV 加 CDN_SIGN_KEY、两条工作流各加一行 CDN_SIGN_KEY: ${{ secrets.CDN_SIGN_KEY }}、deploy-manual.mjs 的用法注释同步。
+- 结果：按测试同一逻辑写脚本核对（本机跑不了那个测试文件）：SECRET_ENV === SECRET_FIELDS = true；preview / production 的 render 步骤密钥清单 === SECRET_FIELDS = true（各 11 项）。CDN_SIGN_KEY 在契约里属可选密钥，未在 GitHub 配该 secret 时渲染得到空值、不影响部署。
+- 下一步：推送复验 CI core

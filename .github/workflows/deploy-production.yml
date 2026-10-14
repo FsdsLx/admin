@@ -595,6 +595,7 @@ jobs:
           MAIL_ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.MAIL_ALIYUN_ACCESS_KEY_SECRET }}
           MAIL_RESEND_API_KEY: ${{ secrets.MAIL_RESEND_API_KEY }}
           MAIL_ALLOWLIST: ${{ secrets.MAIL_ALLOWLIST }}
+          CDN_SIGN_KEY: ${{ secrets.CDN_SIGN_KEY }}
         run: |
           set -eu
           node scripts/deployment-environment.mjs render \
